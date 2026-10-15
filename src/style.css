@@ -1,0 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0a0b0d;
+  --bg-elevated: #111215;
+  --bg-hover: #1a1c20;
+  --border: #23252a;
+  --border-strong: #34343a;
+  --text-primary: #f7f8f8;
+  --text-secondary: #d0d6e0;
+  --text-muted: #8a8f98;
+  --text-subtle: #62666d;
+  --accent: #7170ff;
+  --accent-hover: #828fff;
+  --accent-bg: rgba(113, 112, 255, 0.12);
+  --accent-border: rgba(113, 112, 255, 0.3);
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.12);
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.12);
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.12);
+  --focus-ring: hsla(246, 100%, 71%, 1);
+  --shadow-sm: rgba(0, 0, 0, 0.2) 0 0 0 1px;
+  --shadow-md: rgba(0, 0, 0, 0.2) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 2px, rgba(0, 0, 0, 0.04) 0 8px 8px -8px, #1a1c20 0 0 0 1px;
+  --shadow-lg: rgba(0, 0, 0, 0.4) 0 8px 24px -8px, rgba(0, 0, 0, 0.08) 0 0 0 1px;
+  --shadow-inset: rgba(0, 0, 0, 0.2) 0 0 12px 0px inset;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 9999px;
+  --font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --container-max: 1200px;
+  --header-height: 64px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ffffff;
+    --bg-elevated: #f7f8f8;
+    --bg-hover: #f3f4f5;
+    --border: #d0d6e0;
+    --border-strong: #e6e6e6;
+    --text-primary: #171717;
+    --text-secondary: #4d4d4d;
+    --text-muted: #808080;
+    --text-subtle: #a0a0a0;
+    --accent: #5e6ad2;
+    --accent-hover: #7170ff;
+    --accent-bg: rgba(94, 106, 210, 0.1);
+    --accent-border: rgba(94, 106, 210, 0.25);
+    --success: #059669;
+    --success-bg: rgba(5, 150, 105, 0.1);
+    --warning: #d97706;
+    --warning-bg: rgba(217, 119, 6, 0.1);
+    --danger: #dc2626;
+    --danger-bg: rgba(220, 38, 38, 0.1);
+    --focus-ring: hsla(246, 85%, 55%, 1);
+    --shadow-sm: rgba(0, 0, 0, 0.08) 0 0 0 1px;
+    --shadow-md: rgba(0, 0, 0, 0.08) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 2px, rgba(0, 0, 0, 0.04) 0 8px 8px -8px, #fafafa 0 0 0 1px;
+    --shadow-lg: rgba(0, 0, 0, 0.08) 0 8px 24px -8px, rgba(0, 0, 0, 0.04) 0 0 0 1px;
+    --shadow-inset: rgba(0, 0, 0, 0.03) 0 0 12px 0px inset;
+  }
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg);
+  font-feature-settings: 'liga' 1, 'cv01' 1, 'ss03' 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+code, pre {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 var(--space-4);
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
