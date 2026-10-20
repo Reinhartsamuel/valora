@@ -1,405 +1,329 @@
-import { createButton, createBadge, createIcon, createTable, createSelect } from '../components/UI.ts';
+import { createTable, createSelect, createButton, createBadge, createIcon, createToast } from '../components/UI';
 
-export async function createTrustPage(): Promise<HTMLElement> {
+export function renderTrust(): HTMLDivElement {
   const page = document.createElement('div');
-  page.style.cssText = 'width: 100%; display: flex; flex-direction: column; min-height: calc(100vh - var(--header-height) - 280px);';
-
-  // Header toolbar
-  const toolbar = document.createElement('section');
-  toolbar.style.cssText = `
-    padding: var(--space-4) var(--space-6);
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-elevated);
+  page.className = 'container';
+  page.style.cssText = `
+    padding-top: 0;
+    padding-bottom: 0;
+    min-height: calc(100vh - var(--header-height) - 280px);
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-4);
-    flex-wrap: wrap;
+    flex-direction: column;
   `;
-  toolbar.innerHTML = `
-    <div style="display: flex; align-items: center; gap: var(--space-4);">
-      <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--text-primary);">Trust Reports</h2>
-      <div style="display: flex; align-items: center; gap: var(--space-2); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0 var(--space-3);" id="filter-status"></div>
-      <div style="display: flex; align-items: center; gap: var(--space-2); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0 var(--space-3);" id="filter-date"></div>
-    </div>
-    <div style="display: flex; align-items: center; gap: var(--space-3);">
-      <div id="new-report-btn"></div>
-    </div>
-  `;
+
+  // ── Header ──
+  const header = document.createElement('section');
+  header.setAttribute('aria-label', 'Trust center header');
+  header.style.cssText = 'padding: var(--space-12) 0 var(--space-8);';
+  const h1 = document.createElement('h1');
+  h1.textContent = 'Trust Center';
+  h1.style.cssText = 'font-size: 2.25rem; font-weight: 600; letter-spacing: -0.03em; color: var(--text-primary);';
+  const sub = document.createElement('p');
+  sub.textContent = 'Every strategy that has run through Valora, with its full validation verdict.';
+  sub.style.cssText = 'margin-top: var(--space-2); font-size: 0.9375rem; color: var(--text-secondary);';
+  header.appendChild(h1);
+  header.appendChild(sub);
+
+  // ── Toolbar ──
+  const toolbar = document.createElement('div');
+  toolbar.style.cssText = 'display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap;';
 
   const statusFilter = createSelect([
-    { value: 'all', label: 'All Status' },
+    { value: 'all', label: 'All statuses' },
     { value: 'passed', label: 'Passed' },
     { value: 'failed', label: 'Failed' },
     { value: 'conditional', label: 'Conditional' },
   ]);
-  toolbar.querySelector('#filter-status')!.appendChild(statusFilter);
+  statusFilter.style.width = '140px';
 
-  const dateFilter = createSelect([
-    { value: 'all', label: 'All Time' },
-    { value: '7d', label: 'Last 7 Days' },
-    { value: '30d', label: 'Last 30 Days' },
-    { value: '90d', label: 'Last 90 Days' },
+  const venueFilter = createSelect([
+    { value: 'all', label: 'All venues' },
+    { value: 'binance', label: 'Binance' },
+    { value: 'okx', label: 'OKX' },
+    { value: 'bybit', label: 'Bybit' },
+    { value: 'coinbase', label: 'Coinbase' },
   ]);
-  toolbar.querySelector('#filter-date')!.appendChild(dateFilter);
+  venueFilter.style.width = '130px';
 
-  const newReportBtn = createButton('primary', 'md');
-  newReportBtn.textContent = 'Generate Report';
-  newReportBtn.prepend(createIcon('chart', 16));
-  toolbar.querySelector('#new-report-btn')!.appendChild(newReportBtn);
-
-  page.appendChild(toolbar);
-
-  // Report list
-  const main = document.createElement('main');
-  main.style.cssText = `
-    flex: 1;
-    padding: var(--space-6);
-    max-width: var(--container-max);
-    width: 100%;
-    margin: 0 auto;
-    box-sizing: border-box;
+  const searchInput = document.createElement('input');
+  searchInput.type = 'text';
+  searchInput.placeholder = 'Filter by strategy or symbol…';
+  searchInput.style.cssText = `
+    height: 34px;
+    width: 260px;
+    padding: 0 var(--space-3);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
   `;
+  searchInput.addEventListener('focus', () => {
+    searchInput.style.borderColor = 'var(--accent)';
+    searchInput.style.boxShadow = '0 0 0 2px var(--focus)';
+  });
+  searchInput.addEventListener('blur', () => {
+    searchInput.style.borderColor = 'var(--border)';
+    searchInput.style.boxShadow = 'none';
+  });
 
-  const reports = [
-    {
-      id: 'tr-2024-001247',
-      strategy: 'EMA Crossover BTC/USDT',
-      venue: 'Binance',
-      timeframe: '1h',
-      status: 'passed',
-      date: '2024-12-15',
-      cpcvSharpe: 1.84,
-      dsr: 1.42,
-      pbo: 0.023,
-      maxDD: -12.4,
-      return: 247,
-    },
-    {
-      id: 'tr-2024-001198',
-      strategy: 'RSI Mean Reversion ETH/USDT',
-      venue: 'Bybit',
-      timeframe: '15m',
-      status: 'conditional',
-      date: '2024-12-10',
-      cpcvSharpe: 1.12,
-      dsr: 0.87,
-      pbo: 0.187,
-      maxDD: -28.3,
-      return: 89,
-    },
-    {
-      id: 'tr-2024-001156',
-      strategy: 'BB Breakout SOL/USDT',
-      venue: 'OKX',
-      timeframe: '4h',
-      status: 'failed',
-      date: '2024-12-05',
-      cpcvSharpe: 0.34,
-      dsr: 0.12,
-      pbo: 0.623,
-      maxDD: -45.7,
-      return: -12,
-    },
-    {
-      id: 'tr-2024-001089',
-      strategy: 'MACD Trend Follow BTC/USDT',
-      venue: 'Coinbase',
-      timeframe: '1d',
-      status: 'passed',
-      date: '2024-11-28',
-      cpcvSharpe: 2.15,
-      dsr: 1.78,
-      pbo: 0.008,
-      maxDD: -8.9,
-      return: 312,
-    },
-    {
-      id: 'tr-2024-001043',
-      strategy: 'Custom: Volume-Weighted Momentum',
-      venue: 'Kraken',
-      timeframe: '1h',
-      status: 'passed',
-      date: '2024-11-22',
-      cpcvSharpe: 1.67,
-      dsr: 1.31,
-      pbo: 0.041,
-      maxDD: -15.2,
-      return: 198,
-    },
-  ];
+  const runBtn = createButton('primary', 'md');
+  runBtn.textContent = 'Run new backtest';
+  runBtn.appendChild(createIcon('upload', 14));
+  runBtn.addEventListener('click', () => { window.location.href = '/backtest'; });
+
+  toolbar.appendChild(statusFilter);
+  toolbar.appendChild(venueFilter);
+  toolbar.appendChild(searchInput);
+  toolbar.appendChild(runBtn);
+
+  // ── Trust table (dense) ──
+  const tableWrap = document.createElement('div');
+  tableWrap.style.cssText = 'margin-top: var(--space-6); background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; flex: 1;';
 
   const table = createTable(
-    ['Report ID', 'Strategy', 'Venue', 'TF', 'Status', 'CPCV Sharpe', 'DSR', 'PBO', 'Max DD', 'Return', 'Date', 'Actions'],
-    reports.map(r => [
-      r.id,
-      r.strategy,
-      r.venue,
-      r.timeframe,
-      `<span class="badge-${r.status}"></span>`,
-      r.cpcvSharpe.toFixed(2),
-      r.dsr.toFixed(2),
-      r.pbo.toFixed(3),
-      `${r.maxDD}%`,
-      `${r.return > 0 ? '+' : ''}${r.return}%`,
-      r.date,
-      '',
-    ]),
-    { striped: true, hoverable: true }
+    ['Strategy', 'Symbol', 'Venue', 'Status', 'CPCV', 'DSR', 'PBO', 'Max DD', 'Actions'],
+    [
+      [
+        '<span style="font-weight: 500; color: var(--text-primary);">MACD Trend Follow</span>',
+        '<span style="font-family: var(--font-mono); font-size: 0.75rem;">BTC/USDT</span>',
+        '<span style="font-family: var(--font-mono); font-size: 0.75rem;">Binance</span>',
+        '<span class="status-badge" data-status="passed"></span>',
+        '<span style="font-family: var(--font-mono); font-variant-numeric: tabular-nums;">2.15</span>',
+        '<span style="font-family: var(--font-mono); font-variant-numeric: tabular-nums;">1.78</span>',
+        '<span style="font-family: var(--font-mono); font-variant-numeric: tabular-nums;">0.008</span>',
+        '<span style="font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--danger);">-8.9%</span>',
+        '',
+      ],
+      [
+        '<span style="font-weight: 500; color: var(--text-primary);">Mean Reversion SPX</span>',
+        '<span style="font-family: var(--font-mono); font-size: 0.75rem;">SPX</span>',
+        '<span style="font-family: var(--font-mono); font-size: 0.75rem;">Coinbase</span>',
+        '<span class="status-badge" data-status="failed"></span>',
+        '<span style="font-family: var(--font-mono); font-variant-numeric: tabular-nums;">0.42</span>',
+        '<span style="font-family: var(--font-mono); font-variant-numeric: tabular-nums;">0.11</span>',
+        '<span style="font-family: var(--font-mono); font-variant-numeric: tabular-nums;">0.23</span>',
+        '<span style="font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--danger);">-22.4%</span>',
+        '',
+      ],
+      [
+        '<span style="font-weight: 500; color: var(--text-primary);">Momentum Basket</span>',
+        '<span style="font-family: var(--font-mono); font-size: 0.75rem;">ETH/USDT</span>',
+        '<span style="font-family: var(--font-mono); font-size: 0.75rem;">OKX</span>',
+        '<span class="status-badge" data-status="conditional"></span>',
+        '<span style="font-family: var(--font-mono); font-variant-numeric: tabular-nums;">1.31</span>',
+        '<span style="font-family: var(--font-mono); font-variant-numeric: tabular-nums;">0.94</span>',
+        '<span style="font-family: var(--font-mono); font-variant-numeric: tabular-nums;">0.12</span>',
+        '<span style="font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--danger);">-14.2%</span>',
+        '',
+      ],
+    ],
+    { striped: true, hoverable: true },
   );
 
-  // Replace status cells with badges
+  const tableStyle = document.createElement('style');
+  tableStyle.textContent = `
+    .status-badge { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 0.625rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+    .status-badge .dot { width: 5px; height: 5px; border-radius: 1px; }
+    .status-badge[data-status="passed"] { color: var(--success); }
+    .status-badge[data-status="passed"] .dot { background: var(--success); }
+    .status-badge[data-status="failed"] { color: var(--danger); }
+    .status-badge[data-status="failed"] .dot { background: var(--danger); }
+    .status-badge[data-status="conditional"] { color: var(--warning); }
+    .status-badge[data-status="conditional"] .dot { background: var(--warning); }
+  `;
+  document.head.appendChild(tableStyle);
+
+  // Fill status badges and action buttons by row index
   const tbody = table.querySelector('tbody')!;
-  reports.forEach((r, i) => {
-    const row = tbody.rows[i];
-    const statusCell = row.cells[4];
-    const actionsCell = row.cells[11];
-    
-    const badge = createBadge(
-      r.status === 'passed' ? 'Passed' : r.status === 'failed' ? 'Failed' : 'Conditional',
-      r.status === 'passed' ? 'success' : r.status === 'failed' ? 'danger' : 'warning'
-    );
-    statusCell.innerHTML = '';
-    statusCell.appendChild(badge);
+  const statuses = ['Passed', 'Failed', 'Conditional'];
+  const rows = tbody.querySelectorAll('tr');
+  rows.forEach((row, i) => {
+    const badgeEl = row.querySelector('.status-badge') as HTMLElement | null;
+    if (badgeEl) {
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      badgeEl.appendChild(dot);
+      badgeEl.appendChild(document.createTextNode(statuses[i]));
+    }
+    const actionsCell = row.querySelector<HTMLElement>('td:last-child')!;
+    const actions = document.createElement('div');
 
     const viewBtn = createButton('ghost', 'sm');
     viewBtn.textContent = 'View';
-    viewBtn.prepend(createIcon('externalLink', 12));
-    actionsCell.appendChild(viewBtn);
+    viewBtn.addEventListener('click', () => openTrustModal(i));
 
-    const downloadBtn = createButton('ghost', 'sm');
-    downloadBtn.textContent = 'PDF';
-    downloadBtn.prepend(createIcon('download', 12));
-    actionsCell.appendChild(downloadBtn);
+    const pdfBtn = createButton('secondary', 'sm');
+    pdfBtn.textContent = 'PDF';
+    pdfBtn.appendChild(createIcon('download', 12));
+    pdfBtn.addEventListener('click', () => {
+      createToast(`Preparing TR-2024-0010${i + 1} export…`, 'info');
+    });
+
+    actions.appendChild(viewBtn);
+    actions.appendChild(pdfBtn);
+    actions.style.cssText = 'display: flex; gap: var(--space-2);';
+    actionsCell.textContent = '';
+    actionsCell.appendChild(actions);
+    actionsCell.style.cssText = 'white-space: nowrap; vertical-align: middle;';
   });
 
-  main.appendChild(table);
-  page.appendChild(main);
+  tableWrap.appendChild(table);
 
-  // Report Detail Modal (hidden by default)
+  // ── Modal ──
   const modal = document.createElement('div');
-  modal.id = 'report-modal';
   modal.style.cssText = `
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.85);
-    z-index: 1000;
+    background: rgba(7, 8, 9, 0.72);
     display: none;
     align-items: center;
     justify-content: center;
+    z-index: 1000;
     padding: var(--space-6);
-    overflow-y: auto;
   `;
-  modal.innerHTML = `
-    <div style="
-      width: 100%;
-      max-width: 900px;
-      max-height: 90vh;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-lg);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    ">
-      <div style="
-        padding: var(--space-5) var(--space-6);
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: var(--space-4);
-      ">
-        <div>
-          <h3 id="modal-title" style="font-size: 1.125rem; font-weight: 600; color: var(--text-primary);"></h3>
-          <p id="modal-meta" style="font-size: 0.8125rem; color: var(--text-muted); margin-top: var(--space-1);"></p>
-        </div>
-        <div style="display: flex; gap: var(--space-2);">
-          <button id="modal-download" class="btn btn-secondary" style="display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); font-size: 0.875rem; font-weight: 500; border-radius: var(--radius-md); background: var(--bg); color: var(--text-primary); border: 1px solid var(--border); cursor: pointer;">
-            ${createIcon('download', 16).outerHTML} Download PDF
-          </button>
-          <button id="modal-close" style="width: 40px; height: 40px; border-radius: var(--radius-md); background: transparent; border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center;">
-            ${createIcon('x', 20).outerHTML}
-          </button>
-        </div>
-      </div>
-      <div id="modal-content" style="flex: 1; overflow-y: auto; padding: var(--space-6);"></div>
-    </div>
+  const modalContent = document.createElement('div');
+  modalContent.style.cssText = `
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 640px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
   `;
-  document.body.appendChild(modal);
 
-  // Event handlers
-  const viewButtons = table.querySelectorAll('button:has(svg):first-child');
-  viewButtons.forEach((btn, idx) => {
-    btn.addEventListener('click', () => openModal(reports[idx]));
-  });
+  function openTrustModal(rowIndex: number) {
+    const strategyNames = ['MACD Trend Follow — BTC/USDT', 'Mean Reversion SPX', 'Momentum Basket — ETH/USDT'];
+    const status = statuses[rowIndex];
+    const statusVariant = rowIndex === 0 ? 'success' : rowIndex === 1 ? 'danger' : 'warning';
 
-  modal.querySelector('#modal-close')!.addEventListener('click', closeModal);
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeModal();
-  });
+    const mHead = document.createElement('div');
+    mHead.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: var(--space-5); border-bottom: 1px solid var(--border);';
+    const mTitle = document.createElement('div');
+    mTitle.innerHTML = `<div style="font-size: 1rem; font-weight: 600; color: var(--text-primary);">${strategyNames[rowIndex]}</div><div style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--text-subtle); margin-top: 2px;">TR-2024-0010${rowIndex + 1} · ${new Date().getFullYear()}</div>`;
+    mHead.appendChild(mTitle);
+    mHead.appendChild(createBadge(status, statusVariant as 'success' | 'danger' | 'warning'));
 
-  function openModal(report: typeof reports[0]) {
-    const statusLabel = report.status === 'passed' ? 'Passed' : report.status === 'failed' ? 'Failed' : 'Conditional';
-    const statusVariant = report.status === 'passed' ? 'success' : report.status === 'failed' ? 'danger' : 'warning';
-    
-    modal.querySelector('#modal-title')!.textContent = report.strategy;
-    modal.querySelector('#modal-meta')!.textContent = `${report.id} • ${report.venue} • ${report.timeframe} • ${report.date}`;
-    
-    modal.querySelector('#modal-content')!.innerHTML = `
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-6); margin-bottom: var(--space-8);">
-        <div>
-          <h4 style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); margin-bottom: var(--space-4);">Validation Results</h4>
-          <div style="display: flex; flex-direction: column; gap: var(--space-3);">
-            ${renderMetricRow('CPCV Sharpe Ratio', report.cpcvSharpe.toFixed(2), report.cpcvSharpe > 1 ? 'success' : 'warning')}
-            ${renderMetricRow('Deflated Sharpe Ratio', report.dsr.toFixed(2), report.dsr > 1 ? 'success' : 'warning')}
-            ${renderMetricRow('PBO p-value', report.pbo.toFixed(3), report.pbo < 0.05 ? 'success' : report.pbo < 0.2 ? 'warning' : 'danger')}
-            ${renderMetricRow('Max Drawdown', `${report.maxDD}%`, report.maxDD > -20 ? 'success' : report.maxDD > -35 ? 'warning' : 'danger')}
-            ${renderMetricRow('Total Return', `${report.return > 0 ? '+' : ''}${report.return}%`, report.return > 0 ? 'success' : 'danger')}
-            ${renderMetricRow('Verdict', statusLabel, statusVariant)}
-          </div>
-        </div>
-        <div>
-          <h4 style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); margin-bottom: var(--space-4);">CPCV Equity Paths</h4>
-          <div id="modal-cv-chart" style="height: 280px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md);"></div>
-        </div>
-      </div>
-      
-      <div style="border-top: 1px solid var(--border); padding-top: var(--space-6);">
-        <h4 style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); margin-bottom: var(--space-4);">Regime Attribution</h4>
-        <div id="modal-regime" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4);"></div>
-      </div>
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+    closeBtn.style.cssText = 'color: var(--text-subtle); padding: 6px; display: flex; align-items: center; margin-right: -6px;';
+    closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+    mHead.appendChild(closeBtn);
 
-      <div style="border-top: 1px solid var(--border); padding-top: var(--space-6); margin-top: var(--space-6);">
-        <h4 style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); margin-bottom: var(--space-4);">Trade Statistics</h4>
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4);">
-          ${renderStatCard('Total Trades', '247')}
-          ${renderStatCard('Win Rate', '54.2%')}
-          ${renderStatCard('Profit Factor', '1.68')}
-          ${renderStatCard('Avg Holding', '2.3 days')}
-        </div>
-      </div>
-    `;
+    const mBody = document.createElement('div');
+    mBody.style.cssText = 'padding: var(--space-5);';
 
-    renderModalCVChart(modal.querySelector('#modal-cv-chart')!);
-    renderRegimeAttribution(modal.querySelector('#modal-regime')!);
-    
+    // Metrics rows
+    const metricsData: [string, string, string][] = [
+      ['CPCV Sharpe', '2.15', rowIndex === 0 ? 'var(--text-primary)' : 'var(--danger)'],
+      ['Deflated Sharpe', '1.78', rowIndex === 0 ? 'var(--text-primary)' : 'var(--danger)'],
+      ['PBO', '0.008', 'var(--text-primary)'],
+      ['Max Drawdown', '-8.9%', 'var(--danger)'],
+      ['Regime attribution', 'High-vol: PASS · Low-vol: FAIL', 'var(--text-secondary)'],
+    ];
+    metricsData.forEach(([label, value, color]) => {
+      const rowEl = document.createElement('div');
+      rowEl.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border);';
+      rowEl.innerHTML = `
+        <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase;">${label}</span>
+        <span style="font-family: var(--font-mono); font-size: 0.8125rem; font-weight: 500; color: ${color}; font-variant-numeric: tabular-nums;">${value}</span>
+      `;
+      mBody.appendChild(rowEl);
+    });
+
+    // Regime breakdown
+    const regimeTitle = document.createElement('div');
+    regimeTitle.className = 'mono-label';
+    regimeTitle.textContent = 'Regime attribution';
+    regimeTitle.style.cssText += ' margin-top: var(--space-5); margin-bottom: var(--space-3);';
+    mBody.appendChild(regimeTitle);
+
+    const regimeGrid = document.createElement('div');
+    regimeGrid.style.cssText = 'display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3);';
+    const regimes: [string, string, 'success' | 'danger' | 'warning'][] = [
+      ['High volatility', rowIndex === 1 ? 'FAIL' : 'PASS', rowIndex === 1 ? 'danger' : 'success'],
+      ['Low volatility', rowIndex === 0 ? 'PASS' : 'PASS', 'success'],
+      ['Trending', rowIndex === 2 ? 'PASS' : 'PASS', 'success'],
+    ];
+    regimes.forEach(([name, verdict, variant]) => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3);';
+      card.innerHTML = `
+        <div style="font-family: var(--font-mono); font-size: 0.625rem; color: var(--text-subtle); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px;">${name}</div>
+        <div style="font-family: var(--font-mono); font-size: 0.875rem; font-weight: 600; color: var(--${variant === 'success' ? 'success' : variant === 'danger' ? 'danger' : 'warning'});">${verdict}</div>
+      `;
+      regimeGrid.appendChild(card);
+    });
+    mBody.appendChild(regimeGrid);
+
+    // CV chart
+    const cvLabel = document.createElement('div');
+    cvLabel.className = 'mono-label';
+    cvLabel.textContent = 'In-sample vs out-of-sample';
+    cvLabel.style.cssText += ' margin-top: var(--space-5); margin-bottom: var(--space-3);';
+    mBody.appendChild(cvLabel);
+
+    const cvChart = document.createElement('div');
+    cvChart.innerHTML = `<svg width="100%" height="120" viewBox="0 0 320 120" preserveAspectRatio="none">
+      <line x1="0" y1="60" x2="320" y2="60" stroke="var(--border)" stroke-width="1"/>
+      <polyline points="0,100 40,88 80,72 120,64 160,50 200,44 240,36 280,28 320,20" fill="none" stroke="var(--text-subtle)" stroke-width="1.5"/>
+      <polyline points="160,50 180,54 200,48 220,56 240,44 260,52 280,38 300,46 320,34" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+      <line x1="160" y1="0" x2="160" y2="120" stroke="var(--border-strong)" stroke-width="1" stroke-dasharray="4 4"/>
+    </svg>`;
+    mBody.appendChild(cvChart);
+
+    const legend = document.createElement('div');
+    legend.style.cssText = 'display: flex; gap: var(--space-4); margin-top: var(--space-3);';
+    const legendItems: [string, string][] = [
+      ['In-sample', 'var(--text-subtle)'],
+      ['Out-of-sample', 'var(--accent)'],
+    ];
+    legendItems.forEach(([label, color]) => {
+      const item = document.createElement('span');
+      item.innerHTML = `<span style="display: inline-block; width: 12px; height: 2px; background: ${color}; margin-right: 6px; vertical-align: middle;"></span><span style="font-family: var(--font-mono); font-size: 0.625rem; color: var(--text-muted); letter-spacing: 0.06em;">${label}</span>`;
+      legend.appendChild(item);
+    });
+    mBody.appendChild(legend);
+
+    modalContent.innerHTML = '';
+    modalContent.appendChild(mHead);
+    modalContent.appendChild(mBody);
     modal.style.display = 'flex';
+    document.body.appendChild(modal);
     document.body.style.overflow = 'hidden';
   }
 
-  function closeModal() {
-    modal.style.display = 'none';
-    document.body.style.overflow = '';
-  }
+  // Move modal into page once
+  modal.appendChild(modalContent);
+  page.appendChild(header);
+  page.appendChild(toolbar);
+  page.appendChild(tableWrap);
+  page.appendChild(modal);
 
-  function renderMetricRow(label: string, value: string, status: 'success' | 'warning' | 'danger') {
-    const colors = { success: 'var(--success)', warning: 'var(--warning)', danger: 'var(--danger)' };
-    return `
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-3); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md);">
-        <span style="color: var(--text-secondary); font-size: 0.875rem;">${label}</span>
-        <div style="display: flex; align-items: center; gap: var(--space-2);">
-          <span style="font-family: var(--font-mono); font-size: 1rem; font-weight: 600; color: var(--text-primary);">${value}</span>
-          <span style="width: 8px; height: 8px; border-radius: 50%; background: ${colors[status]};"></span>
-        </div>
-      </div>
-    `;
-  }
-
-  function renderStatCard(label: string, value: string) {
-    return `
-      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-4); text-align: center;">
-        <div style="font-family: var(--font-mono); font-size: 1.5rem; font-weight: 600; color: var(--text-primary);">${value}</div>
-        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: var(--space-1);">${label}</div>
-      </div>
-    `;
-  }
-
-  function renderModalCVChart(container: HTMLElement) {
-    const paths = 10;
-    const points = 80;
-    const width = 860;
-    const height = 280;
-    const padding = 30;
-
-    let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="display: block;">`;
-    
-    for (let i = 0; i <= 5; i++) {
-      const y = padding + (i / 5) * (height - 2 * padding);
-      svg += `<line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" stroke="var(--border)" stroke-width="0.5"/>`;
+  // Close modal on backdrop click
+  modal.addEventListener('click', e => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
     }
+  });
 
-    for (let p = 0; p < paths; p++) {
-      let isInSample = p < 6;
-      const color = isInSample ? 'var(--accent)' : 'var(--success)';
-      const opacity = isInSample ? '0.35' : '0.55';
-      const strokeWidth = isInSample ? '1' : '1.5';
-      
-      let pathData = `M${padding},${height - padding}`;
-      for (let i = 1; i <= points; i++) {
-        const x = padding + (i / points) * (width - 2 * padding);
-        const baseY = height - padding - (i / points) * (height - 2 * padding) * 0.65;
-        const noise = (Math.sin(i * 0.4 + p * 0.7) * 0.35 + Math.random() * 0.15 - 0.075) * (height - 2 * padding) * 0.18;
-        const y = baseY + noise;
-        pathData += ` L${x},${y}`;
-      }
-      svg += `<path d="${pathData}" stroke="${color}" stroke-width="${strokeWidth}" fill="none" opacity="${opacity}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  // ── Responsive ──
+  const mq = window.matchMedia('(max-width: 720px)');
+  const apply = (matches: boolean) => {
+    if (matches) {
+      tableWrap.style.overflowX = 'auto';
+      table.style.minWidth = '960px';
     }
-
-    let meanPath = `M${padding},${height - padding}`;
-    for (let i = 1; i <= points; i++) {
-      const x = padding + (i / points) * (width - 2 * padding);
-      const y = height - padding - (i / points) * (height - 2 * padding) * 0.65;
-      meanPath += ` L${x},${y}`;
-    }
-    svg += `<path d="${meanPath}" stroke="var(--text-primary)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
-
-    svg += '</svg>';
-    container.innerHTML = svg;
-  }
-
-  function renderRegimeAttribution(container: HTMLElement) {
-    const regimes = [
-      { name: 'Bull Trend', trades: 89, winRate: 62.9, avgReturn: '+1.8%', contribution: '+42.3%' },
-      { name: 'Bear Trend', trades: 67, winRate: 41.8, avgReturn: '-0.9%', contribution: '-18.7%' },
-      { name: 'Sideways', trades: 91, winRate: 52.7, avgReturn: '+0.3%', contribution: '+5.4%' },
-    ];
-
-    container.innerHTML = regimes.map(r => `
-      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-4);">
-        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-3);">${r.name}</div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2) var(--space-3); font-size: 0.8125rem;">
-          <span style="color: var(--text-muted);">Trades</span>
-          <span style="color: var(--text-primary); font-family: var(--font-mono); font-weight: 500;">${r.trades}</span>
-          <span style="color: var(--text-muted);">Win Rate</span>
-          <span style="color: var(--text-primary); font-family: var(--font-mono); font-weight: 500;">${r.winRate}%</span>
-          <span style="color: var(--text-muted);">Avg Return</span>
-          <span style="color: var(--text-primary); font-family: var(--font-mono); font-weight: 500;">${r.avgReturn}</span>
-          <span style="color: var(--text-muted);">Contribution</span>
-          <span style="color: ${r.contribution.startsWith('+') ? 'var(--success)' : 'var(--danger)'}; font-family: var(--font-mono); font-weight: 500;">${r.contribution}</span>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  // Responsive
-  const style = document.createElement('style');
-  style.textContent = `
-    @media (max-width: 1024px) {
-      main { padding: var(--space-4); }
-      table { font-size: 0.8125rem; }
-      th, td { padding: var(--space-2) var(--space-3) !important; }
-    }
-    @media (max-width: 768px) {
-      #modal-content { padding: var(--space-4); }
-      #modal-content > div:first-child { grid-template-columns: 1fr !important; }
-      #modal-regime { grid-template-columns: 1fr !important; }
-      .modal-stats { grid-template-columns: 1fr 1fr !important; }
-    }
-  `;
-  document.head.appendChild(style);
+  };
+  apply(mq.matches);
+  mq.addEventListener('change', e => apply(e.matches));
 
   return page;
 }

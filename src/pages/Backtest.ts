@@ -1,328 +1,308 @@
-import { createButton, createCard, createIcon, createTabs, createInput, createSelect } from '../components/UI.ts';
+import { createButton, createTabs, createTable, createIcon, createToast } from '../components/UI';
 
-export async function createBacktestPage(): Promise<HTMLElement> {
+export function renderBacktest(): HTMLDivElement {
   const page = document.createElement('div');
-  page.style.cssText = 'width: 100%; display: flex; flex-direction: column; min-height: calc(100vh - var(--header-height) - 280px);';
-
-  // Toolbar
-  const toolbar = document.createElement('section');
-  toolbar.style.cssText = `
-    padding: var(--space-4) var(--space-6);
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-elevated);
+  page.className = 'container';
+  page.style.cssText = `
+    padding-top: 0;
+    padding-bottom: 0;
+    min-height: calc(100vh - var(--header-height) - 280px);
     display: flex;
-    align-items: center;
-    gap: var(--space-4);
-    flex-wrap: wrap;
-  `;
-  toolbar.innerHTML = `
-    <div style="display: flex; align-items: center; gap: var(--space-3); flex: 1; min-width: 300px;">
-      <div style="display: flex; align-items: center; gap: var(--space-2);">
-        <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle);">Strategy</span>
-        <div id="strategy-select"></div>
-      </div>
-      <div style="display: flex; align-items: center; gap: var(--space-2);">
-        <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle);">Venue</span>
-        <div id="venue-select"></div>
-      </div>
-      <div style="display: flex; align-items: center; gap: var(--space-2);">
-        <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle);">Timeframe</span>
-        <div id="timeframe-select"></div>
-      </div>
-    </div>
-    <div style="display: flex; align-items: center; gap: var(--space-3);">
-      <div id="run-btn"></div>
-      <div id="export-btn"></div>
-    </div>
+    flex-direction: column;
   `;
 
-  const strategySelect = createSelect([
-    { value: 'ema-cross', label: 'EMA Crossover (9/21)' },
-    { value: 'rsi-mean-rev', label: 'RSI Mean Reversion (14, 30/70)' },
-    { value: 'bb-breakout', label: 'Bollinger Band Breakout (20, 2)' },
-    { value: 'macd-trend', label: 'MACD Trend Follow (12, 26, 9)' },
-    { value: 'custom', label: 'Custom Strategy...' },
-  ]);
-  toolbar.querySelector('#strategy-select')!.appendChild(strategySelect);
-
-  const venueSelect = createSelect([
-    { value: 'binance', label: 'Binance' },
-    { value: 'bybit', label: 'Bybit' },
-    { value: 'okx', label: 'OKX' },
-    { value: 'coinbase', label: 'Coinbase' },
-    { value: 'kraken', label: 'Kraken' },
-  ]);
-  toolbar.querySelector('#venue-select')!.appendChild(venueSelect);
-
-  const timeframeSelect = createSelect([
-    { value: '1m', label: '1 Minute' },
-    { value: '5m', label: '5 Minutes' },
-    { value: '15m', label: '15 Minutes' },
-    { value: '1h', label: '1 Hour' },
-    { value: '4h', label: '4 Hours' },
-    { value: '1d', label: '1 Day' },
-  ]);
-  toolbar.querySelector('#timeframe-select')!.appendChild(timeframeSelect);
+  // ── Header ──
+  const header = document.createElement('section');
+  header.setAttribute('aria-label', 'Backtest runner header');
+  header.style.cssText = 'padding: var(--space-12) 0 var(--space-6);';
+  const headRow = document.createElement('div');
+  headRow.style.cssText = 'display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4);';
+  const h1Block = document.createElement('div');
+  const h1 = document.createElement('h1');
+  h1.textContent = 'Backtest Runner';
+  h1.style.cssText = 'font-size: 2.25rem; font-weight: 600; letter-spacing: -0.03em; color: var(--text-primary);';
+  const sub = document.createElement('p');
+  sub.textContent = 'Configure a run, execute the full validation suite, and inspect the verdict.';
+  sub.style.cssText = 'margin-top: var(--space-2); font-size: 0.9375rem; color: var(--text-secondary);';
+  h1Block.appendChild(h1);
+  h1Block.appendChild(sub);
 
   const runBtn = createButton('primary', 'md');
-  runBtn.textContent = 'Run Backtest';
-  runBtn.prepend(createIcon('chart', 16));
-  toolbar.querySelector('#run-btn')!.appendChild(runBtn);
-
-  const exportBtn = createButton('secondary', 'md');
-  exportBtn.textContent = 'Export';
-  exportBtn.prepend(createIcon('download', 16));
-  toolbar.querySelector('#export-btn')!.appendChild(exportBtn);
-
-  page.appendChild(toolbar);
-
-  // Main content area
-  const main = document.createElement('main');
-  main.style.cssText = `
-    flex: 1;
-    padding: var(--space-6);
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: var(--space-6);
-    max-width: var(--container-max);
-    width: 100%;
-    margin: 0 auto;
-    box-sizing: border-box;
-  `;
-
-  // Left panel - Chart
-  const chartPanel = document.createElement('div');
-  chartPanel.style.cssText = `
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  `;
-  chartPanel.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
-      <h2 style="font-size: 1rem; font-weight: 600; color: var(--text-primary);">Equity Curve</h2>
-      <div style="display: flex; gap: var(--space-1); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-1);" id="chart-tabs"></div>
-    </div>
-    <div id="chart-container" style="flex: 1; min-height: 400px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); position: relative; overflow: hidden;"></div>
-  `;
-  main.appendChild(chartPanel);
-
-  // Right panel - Metrics & Config
-  const rightPanel = document.createElement('div');
-  rightPanel.style.cssText = `
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-    min-height: 0;
-  `;
-
-  // Validation Summary Card
-  const validationCard = createCard(true);
-  validationCard.style.padding = 'var(--space-5)';
-  validationCard.innerHTML = `
-    <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-2);">
-      ${createIcon('shield', 16).outerHTML} Validation Summary
-    </h3>
-    <div id="validation-metrics" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3) var(--space-4);"></div>
-  `;
-  rightPanel.appendChild(validationCard);
-
-  // CPCV Results Card
-  const cvCard = createCard();
-  cvCard.style.padding = 'var(--space-5)';
-  cvCard.style.flex = '1';
-  cvCard.style.minHeight = '200px';
-  cvCard.innerHTML = `
-    <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-2);">
-      ${createIcon('chart', 16).outerHTML} CPCV Paths
-    </h3>
-    <div id="cv-container" style="height: 200px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); position: relative;"></div>
-    <div style="margin-top: var(--space-3); font-size: 0.75rem; color: var(--text-muted);">
-      <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1);">
-        <span style="width: 12px; height: 12px; border-radius: 2px; background: var(--accent);"></span>
-        <span>In-sample</span>
-      </div>
-      <div style="display: flex; align-items: center; gap: var(--space-2);">
-        <span style="width: 12px; height: 12px; border-radius: 2px; background: var(--success);"></span>
-        <span>Out-of-sample</span>
-      </div>
-    </div>
-  `;
-  rightPanel.appendChild(cvCard);
-
-  // Configuration Card
-  const configCard = createCard();
-  configCard.style.padding = 'var(--space-5)';
-  configCard.innerHTML = `
-    <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-4);">Validation Config</h3>
-    <div style="display: flex; flex-direction: column; gap: var(--space-3);">
-      <div>
-        <label style="font-size: 0.75rem; font-weight: 500; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-1); display: block;">CPCV Folds</label>
-        <div id="folds-input"></div>
-      </div>
-      <div>
-        <label style="font-size: 0.75rem; font-weight: 500; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-1); display: block;">Embargo (bars)</label>
-        <div id="embargo-input"></div>
-      </div>
-      <div>
-        <label style="font-size: 0.75rem; font-weight: 500; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-1); display: block;">PBO Trials</label>
-        <div id="pbo-input"></div>
-      </div>
-      <div>
-        <label style="font-size: 0.75rem; font-weight: 500; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-1); display: block;">Lookback Window</label>
-        <div id="lookback-select"></div>
-      </div>
-    </div>
-  `;
-
-  const foldsInput = createInput('10', 'number');
-  foldsInput.style.width = '80px';
-  configCard.querySelector('#folds-input')!.appendChild(foldsInput);
-
-  const embargoInput = createInput('100', 'number');
-  embargoInput.style.width = '80px';
-  configCard.querySelector('#embargo-input')!.appendChild(embargoInput);
-
-  const pboInput = createInput('1000', 'number');
-  pboInput.style.width = '80px';
-  configCard.querySelector('#pbo-input')!.appendChild(pboInput);
-
-  const lookbackSelect = createSelect([
-    { value: '1y', label: '1 Year' },
-    { value: '3y', label: '3 Years' },
-    { value: '5y', label: '5 Years' },
-    { value: '10y', label: '10 Years (Team)' },
-  ]);
-  configCard.querySelector('#lookback-select')!.appendChild(lookbackSelect);
-
-  rightPanel.appendChild(configCard);
-
-  main.appendChild(rightPanel);
-  page.appendChild(main);
-
-  // Initialize chart tabs
-  const chartTabs = createTabs([
-    { id: 'equity', label: 'Equity' },
-    { id: 'drawdown', label: 'Drawdown' },
-    { id: 'regime', label: 'Regimes' },
-    { id: 'trades', label: 'Trades' },
-  ]);
-  chartPanel.querySelector('#chart-tabs')!.appendChild(chartTabs.container);
-
-  // Render initial metrics
-  renderValidationMetrics(validationCard.querySelector('#validation-metrics')!);
-  renderCVChart(cvCard.querySelector('#cv-container')!);
-
-  // Event handlers
+  runBtn.textContent = 'Run suite';
+  runBtn.appendChild(createIcon('chart', 14));
   runBtn.addEventListener('click', () => {
-    runBtn.textContent = 'Running...';
-    runBtn.disabled = true;
-    setTimeout(() => {
-      runBtn.textContent = 'Run Backtest';
-      runBtn.prepend(createIcon('chart', 16));
-      runBtn.disabled = false;
-      renderValidationMetrics(validationCard.querySelector('#validation-metrics')!);
-      renderCVChart(cvCard.querySelector('#cv-container')!);
-    }, 1500);
+    createToast('Suite submitted — 384 resamples across 5 venues…', 'info');
+    setTimeout(() => createToast('Run TR-2024-001090 complete — verdict: PASS', 'success'), 1800);
+  });
+  headRow.appendChild(h1Block);
+  headRow.appendChild(runBtn);
+  header.appendChild(headRow);
+
+  // ── Toolbar ──
+  const toolbar = document.createElement('div');
+  toolbar.style.cssText = 'display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap;';
+
+  const strategySelect = document.createElement('select');
+  strategySelect.innerHTML = [
+    'MACD Trend Follow — BTC/USDT',
+    'Mean Reversion — SPX',
+    'Momentum Basket — ETH/USDT',
+    'Carry + Vol Target — SOL/USDT',
+  ].map(s => `<option>${s}</option>`).join('');
+
+  const venueSelect = document.createElement('select');
+  venueSelect.innerHTML = ['Binance', 'OKX', 'Bybit', 'Coinbase', 'Kraken'].map(s => `<option>${s}</option>`).join('');
+
+  const tfSelect = document.createElement('select');
+  tfSelect.innerHTML = ['1m', '5m', '1h', '4h', '1d'].map(s => `<option>${s}</option>`).join('');
+  tfSelect.selectedIndex = 2;
+
+  const periodInput = document.createElement('input');
+  periodInput.type = 'text';
+  periodInput.value = '2019-01-01 → 2024-12-31';
+  periodInput.readOnly = true;
+
+  const selStyle = `
+    height: 34px;
+    padding: 0 var(--space-3);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  `;
+  [strategySelect, venueSelect, tfSelect].forEach(s => {
+    s.style.cssText = selStyle;
+    s.addEventListener('focus', () => { s.style.borderColor = 'var(--accent)'; s.style.boxShadow = '0 0 0 2px var(--focus)'; });
+    s.addEventListener('blur', () => { s.style.borderColor = 'var(--border)'; s.style.boxShadow = 'none'; });
+  });
+  periodInput.style.cssText = `
+    height: 34px;
+    padding: 0 var(--space-3);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    outline: none;
+    width: 200px;
+  `;
+
+  const label = (text: string) => {
+    const l = document.createElement('span');
+    l.className = 'mono-label';
+    l.textContent = text;
+    return l;
+  };
+  const toolbarItems: [string, HTMLElement][] = [
+    ['Strategy', strategySelect],
+    ['Venue', venueSelect],
+    ['Bars', tfSelect],
+    ['Window', periodInput],
+  ];
+  toolbarItems.forEach(([lbl, el]) => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
+    wrap.appendChild(label(lbl));
+    wrap.appendChild(el);
+    toolbar.appendChild(wrap);
   });
 
-  // Responsive
-  const style = document.createElement('style');
-  style.textContent = `
-    @media (max-width: 1200px) {
-      main {
-        grid-template-columns: 1fr !important;
-      }
-      .right-panel {
-        grid-template-columns: 1fr 1fr !important;
-      }
-    }
-    @media (max-width: 768px) {
-      main {
-        padding: var(--space-4);
-        gap: var(--space-4);
-      }
-      .toolbar {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .toolbar > div:first-child {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .validation-card .metrics-grid {
-        grid-template-columns: 1fr !important;
-      }
-    }
+  // ── Main grid: config + results ──
+  const grid = document.createElement('section');
+  grid.style.cssText = 'display: grid; grid-template-columns: 300px 1fr; gap: var(--space-5); margin-top: var(--space-8); flex: 1;';
+
+  // Config panel
+  const configPanel = document.createElement('div');
+  configPanel.style.cssText = 'background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--space-5); align-self: start;';
+  const cfgTitle = document.createElement('div');
+  cfgTitle.className = 'mono-label';
+  cfgTitle.textContent = 'Cost & sizing';
+  cfgTitle.style.cssText += ' margin-bottom: var(--space-5);';
+
+  const cfgFields: [string, string, number][] = [
+    ['Initial capital ($)', '100000', 0],
+    ['Slippage (bps)', '2.0', 1],
+    ['Commission (bps)', '4.5', 2],
+    ['Max leverage', '3.0', 3],
+  ];
+  cfgFields.forEach(([lbl, val, i]) => {
+    void i;
+    const field = document.createElement('div');
+    field.style.cssText = 'margin-bottom: var(--space-4);';
+    const fLabel = document.createElement('label');
+    fLabel.textContent = lbl;
+    fLabel.style.cssText = 'display: block; font-family: var(--font-mono); font-size: 0.625rem; color: var(--text-subtle); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px;';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = val;
+    input.style.cssText = `
+      width: 100%;
+      height: 34px;
+      padding: 0 var(--space-3);
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--text-primary);
+      background: var(--bg-inset);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    `;
+    input.addEventListener('focus', () => { input.style.borderColor = 'var(--accent)'; input.style.boxShadow = '0 0 0 2px var(--focus)'; });
+    input.addEventListener('blur', () => { input.style.borderColor = 'var(--border)'; input.style.boxShadow = 'none'; });
+    field.appendChild(fLabel);
+    field.appendChild(input);
+    configPanel.appendChild(field);
+  });
+
+  const resetBtn = createButton('ghost', 'sm');
+  resetBtn.textContent = 'Reset defaults';
+  resetBtn.addEventListener('click', () => createToast('Defaults restored', 'info'));
+  configPanel.appendChild(cfgTitle);
+  configPanel.appendChild(resetBtn);
+
+  // Results panel
+  const resultsPanel = document.createElement('div');
+  resultsPanel.style.cssText = 'background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden;';
+
+  const runMeta = document.createElement('div');
+  runMeta.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 12px var(--space-5); border-bottom: 1px solid var(--border);';
+  runMeta.innerHTML = `
+    <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--text-muted); letter-spacing: 0.08em;">TR-2024-001090 · COMPLETED IN 11M 42S</span>
+    <span style="display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 0.625rem; letter-spacing: 0.08em; color: var(--success);">
+      <span style="width: 5px; height: 5px; border-radius: 1px; background: var(--success);"></span>PASS
+    </span>
   `;
-  document.head.appendChild(style);
+  resultsPanel.appendChild(runMeta);
+
+  // Metrics grid
+  const metricsGrid = document.createElement('div');
+  metricsGrid.style.cssText = 'display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border);';
+  const metrics: [string, string, string?][] = [
+    ['SHARPE', '2.31'],
+    ['CPCV SHARPE', '2.15'],
+    ['DEFLATED SHARPE', '1.78'],
+    ['PBO', '0.008'],
+    ['MAX DRAWDOWN', '-8.9%', 'var(--danger)'],
+    ['TOTAL RETURN', '+312.4%', 'var(--success)'],
+    ['WIN RATE', '54.2%'],
+    ['PROFIT FACTOR', '1.61'],
+  ];
+  metrics.forEach(([lbl, value, color]) => {
+    const cell = document.createElement('div');
+    cell.style.cssText = 'background: var(--bg-elevated); padding: var(--space-4);';
+    cell.innerHTML = `
+      <div style="font-family: var(--font-mono); font-size: 0.5625rem; letter-spacing: 0.14em; color: var(--text-subtle); margin-bottom: 6px;">${lbl}</div>
+      <div style="font-family: var(--font-mono); font-size: 1.125rem; font-weight: 600; font-variant-numeric: tabular-nums; color: ${color ?? 'var(--text-primary)'};">${value}</div>
+    `;
+    metricsGrid.appendChild(cell);
+  });
+  resultsPanel.appendChild(metricsGrid);
+
+  // CV chart card with tabs
+  const cvSection = document.createElement('div');
+  cvSection.style.cssText = 'padding: var(--space-5); border-top: 1px solid var(--border);';
+  const cvHead = document.createElement('div');
+  cvHead.style.cssText = 'display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);';
+  const cvTitle = document.createElement('div');
+  cvTitle.className = 'mono-label';
+  cvTitle.textContent = 'Equity — in-sample vs out-of-sample';
+  cvHead.appendChild(cvTitle);
+
+  const tabs = createTabs([
+    { id: 'all', label: 'All windows' },
+    { id: 'best', label: 'Best 25%' },
+    { id: 'worst', label: 'Worst 25%' },
+  ]);
+  cvHead.appendChild(tabs.container);
+  cvSection.appendChild(cvHead);
+
+  const cvChart = document.createElement('div');
+  const cvSvg = () => `<svg width="100%" height="180" viewBox="0 0 480 180" preserveAspectRatio="none">
+    <line x1="0" y1="45" x2="480" y2="45" stroke="var(--border)" stroke-width="1"/>
+    <line x1="0" y1="90" x2="480" y2="90" stroke="var(--border)" stroke-width="1"/>
+    <line x1="0" y1="135" x2="480" y2="135" stroke="var(--border)" stroke-width="1"/>
+    <line x1="240" y1="0" x2="240" y2="180" stroke="var(--border-strong)" stroke-width="1" stroke-dasharray="4 4"/>
+    <polyline points="0,160 60,148 120,120 180,104 240,72 300,60 360,44 420,30 480,16" fill="none" stroke="var(--text-subtle)" stroke-width="1.5"/>
+    <polyline points="240,72 270,80 300,64 330,76 360,52 390,64 420,40 450,52 480,30" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+  </svg>`;
+  cvChart.innerHTML = cvSvg();
+  cvSection.appendChild(cvChart);
+
+  const legend = document.createElement('div');
+  legend.style.cssText = 'display: flex; gap: var(--space-5); margin-top: var(--space-3);';
+  [
+    ['In-sample mean', 'var(--text-subtle)'],
+    ['Out-of-sample mean', 'var(--accent)'],
+  ].forEach(([lbl, color]) => {
+    const item = document.createElement('span');
+    item.innerHTML = `<span style="display: inline-block; width: 12px; height: 2px; background: ${color}; margin-right: 6px; vertical-align: middle;"></span><span style="font-family: var(--font-mono); font-size: 0.625rem; color: var(--text-muted); letter-spacing: 0.06em;">${lbl}</span>`;
+    legend.appendChild(item);
+  });
+  cvSection.appendChild(legend);
+
+  // Regime table
+  const regimeSection = document.createElement('div');
+  regimeSection.style.cssText = 'padding: 0 var(--space-5) var(--space-5); border-top: 1px solid var(--border);';
+  const regimeHead = document.createElement('div');
+  regimeHead.className = 'mono-label';
+  regimeHead.textContent = 'Regime attribution';
+  regimeHead.style.cssText += ' padding-top: var(--space-5); margin-bottom: var(--space-4);';
+  regimeSection.appendChild(regimeHead);
+
+  const regimeTable = createTable(
+    ['Regime', 'Pct of time', 'Sharpe', 'Max DD', 'Verdict'],
+    [
+      [
+        '<span style="color: var(--text-primary); font-weight: 500;">High volatility</span>',
+        '<span style="font-family: var(--font-mono);">22%</span>',
+        '<span style="font-family: var(--font-mono);">1.94</span>',
+        '<span style="font-family: var(--font-mono); color: var(--danger);">-8.9%</span>',
+        '<span style="font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.08em; color: var(--success);">PASS</span>',
+      ],
+      [
+        '<span style="color: var(--text-primary); font-weight: 500;">Low volatility</span>',
+        '<span style="font-family: var(--font-mono);">41%</span>',
+        '<span style="font-family: var(--font-mono);">0.88</span>',
+        '<span style="font-family: var(--font-mono); color: var(--danger);">-3.1%</span>',
+        '<span style="font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.08em; color: var(--warning);">WEAK</span>',
+      ],
+      [
+        '<span style="color: var(--text-primary); font-weight: 500;">Trending</span>',
+        '<span style="font-family: var(--font-mono);">37%</span>',
+        '<span style="font-family: var(--font-mono);">3.02</span>',
+        '<span style="font-family: var(--font-mono); color: var(--danger);">-5.4%</span>',
+        '<span style="font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.08em; color: var(--success);">PASS</span>',
+      ],
+    ],
+    { striped: false, hoverable: true },
+  );
+  regimeSection.appendChild(regimeTable);
+
+  resultsPanel.appendChild(cvSection);
+  resultsPanel.appendChild(regimeSection);
+
+  grid.appendChild(configPanel);
+  grid.appendChild(resultsPanel);
+
+  page.appendChild(header);
+  page.appendChild(toolbar);
+  page.appendChild(grid);
+
+  // Responsive
+  const mq = window.matchMedia('(max-width: 860px)');
+  const apply = (matches: boolean) => {
+    grid.style.gridTemplateColumns = matches ? '1fr' : '300px 1fr';
+    metricsGrid.style.gridTemplateColumns = matches ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)';
+  };
+  apply(mq.matches);
+  mq.addEventListener('change', e => apply(e.matches));
 
   return page;
-}
-
-function renderValidationMetrics(container: HTMLElement) {
-  const metrics = [
-    { label: 'CPCV Sharpe', value: '1.84', status: 'good' },
-    { label: 'Deflated Sharpe', value: '1.42', status: 'good' },
-    { label: 'PBO p-value', value: '0.023', status: 'good' },
-    { label: 'Max Drawdown', value: '-12.4%', status: 'warn' },
-    { label: 'Total Return', value: '+247%', status: 'good' },
-    { label: 'Win Rate', value: '54.2%', status: 'neutral' },
-    { label: 'Profit Factor', value: '1.68', status: 'good' },
-    { label: 'Avg Trade', value: '+0.31%', status: 'good' },
-  ];
-
-  container.innerHTML = metrics.map(m => `
-    <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3);">
-      <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); margin-bottom: var(--space-1);">${m.label}</div>
-      <div style="font-size: 1.125rem; font-weight: 600; color: var(--text-primary); font-family: var(--font-mono);">${m.value}</div>
-    </div>
-  `).join('');
-}
-
-function renderCVChart(container: HTMLElement) {
-  // Simple SVG chart for CPCV paths
-  const paths = 10;
-  const points = 50;
-  const width = container.clientWidth || 380;
-  const height = 200;
-  const padding = 20;
-
-  let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="display: block;">`;
-  
-  // Grid lines
-  for (let i = 0; i <= 4; i++) {
-    const y = padding + (i / 4) * (height - 2 * padding);
-    svg += `<line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" stroke="var(--border)" stroke-width="0.5"/>`;
-  }
-
-  // Generate mock paths
-  for (let p = 0; p < paths; p++) {
-    let isInSample = p < 6;
-    const color = isInSample ? 'var(--accent)' : 'var(--success)';
-    const opacity = isInSample ? '0.4' : '0.6';
-    const strokeWidth = isInSample ? '1' : '1.5';
-    
-    let pathData = `M${padding},${height - padding}`;
-    for (let i = 1; i <= points; i++) {
-      const x = padding + (i / points) * (width - 2 * padding);
-      const baseY = height - padding - (i / points) * (height - 2 * padding) * 0.7;
-      const noise = (Math.sin(i * 0.5 + p) * 0.3 + Math.random() * 0.2 - 0.1) * (height - 2 * padding) * 0.15;
-      const y = baseY + noise;
-      pathData += ` L${x},${y}`;
-    }
-    
-    svg += `<path d="${pathData}" stroke="${color}" stroke-width="${strokeWidth}" fill="none" opacity="${opacity}" stroke-linecap="round" stroke-linejoin="round"/>`;
-  }
-
-  // Mean path
-  let meanPath = `M${padding},${height - padding}`;
-  for (let i = 1; i <= points; i++) {
-    const x = padding + (i / points) * (width - 2 * padding);
-    const y = height - padding - (i / points) * (height - 2 * padding) * 0.7;
-    meanPath += ` L${x},${y}`;
-  }
-  svg += `<path d="${meanPath}" stroke="var(--text-primary)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
-
-  svg += '</svg>';
-  container.innerHTML = svg;
 }

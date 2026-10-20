@@ -2,12 +2,12 @@ import './style.css';
 import { Router } from './router.ts';
 import { Header } from './components/Header.ts';
 import { Footer } from './components/Footer.ts';
-import { createLandingPage } from './pages/Landing.ts';
-import { createPricingPage } from './pages/Pricing.ts';
-import { createBacktestPage } from './pages/Backtest.ts';
-import { createTrustPage } from './pages/Trust.ts';
-import { createMigrationPage } from './pages/Migration.ts';
-import { createDocsPage } from './pages/Docs.ts';
+import { renderLanding } from './pages/Landing.ts';
+import { renderPricing } from './pages/Pricing.ts';
+import { renderBacktest } from './pages/Backtest.ts';
+import { renderTrust } from './pages/Trust.ts';
+import { renderMigration } from './pages/Migration.ts';
+import { renderDocs } from './pages/Docs.ts';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
@@ -20,12 +20,12 @@ app.appendChild(router.element);
 app.appendChild(footer.element);
 
 // Register all routes
-router.register('/', createLandingPage);
-router.register('/pricing', createPricingPage);
-router.register('/backtest', createBacktestPage);
-router.register('/trust', createTrustPage);
-router.register('/migration', createMigrationPage);
-router.register('/docs', createDocsPage);
+router.register('/', renderLanding);
+router.register('/pricing', renderPricing);
+router.register('/backtest', renderBacktest);
+router.register('/trust', renderTrust);
+router.register('/migration', renderMigration);
+router.register('/docs', renderDocs);
 
 // 404 fallback
 router.register('/404', async () => {

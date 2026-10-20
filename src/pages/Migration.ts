@@ -1,470 +1,346 @@
-import { createButton, createIcon, createToast } from '../components/UI.ts';
+import { createButton, createToast, createIcon } from '../components/UI';
 
-export async function createMigrationPage(): Promise<HTMLElement> {
+export function renderMigration(): HTMLDivElement {
   const page = document.createElement('div');
-  page.style.cssText = 'width: 100%; display: flex; flex-direction: column; min-height: calc(100vh - var(--header-height) - 280px);';
-
-  // Hero
-  const hero = document.createElement('section');
-  hero.style.cssText = `padding: var(--space-20) var(--space-6) var(--space-12); text-align: center;`;
-  hero.innerHTML = `
-    <div class="container" style="max-width: 640px;">
-      <h1 style="
-        font-family: var(--font-sans);
-        font-weight: 600;
-        font-size: clamp(2rem, 4vw, 3rem);
-        line-height: 1.1;
-        letter-spacing: -0.02em;
-        color: var(--text-primary);
-        margin-bottom: var(--space-4);
-      ">
-        Migration Wizard
-      </h1>
-      <p style="font-size: 1.125rem; color: var(--text-secondary); line-height: 1.6;">
-        Move your strategies from other platforms into Valora. Upload a file, pick a target engine, get runnable code.
-      </p>
-    </div>
+  page.className = 'container';
+  page.style.cssText = `
+    padding-top: 0;
+    padding-bottom: 0;
+    min-height: calc(100vh - var(--header-height) - 280px);
+    display: flex;
+    flex-direction: column;
   `;
-  page.appendChild(hero);
 
-  // Step indicator
-  const steps = document.createElement('section');
-  steps.style.cssText = `padding: 0 var(--space-6) var(--space-12);`;
-  steps.innerHTML = `
-    <div class="container">
-      <div style="display: flex; align-items: center; gap: var(--space-4); max-width: 800px; margin: 0 auto;">
-        <div style="display: flex; align-items: center; gap: var(--space-2); flex: 1;">
-          <div id="step-1" class="step active" style="display: flex; align-items: center; gap: var(--space-2);">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.75rem;">1</div>
-            <span style="font-weight: 500; color: var(--text-primary);">Upload</span>
-          </div>
-          <div style="flex: 1; height: 2px; background: var(--border);"></div>
-          <div id="step-2" class="step" style="display: flex; align-items: center; gap: var(--space-2);">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--border); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.75rem;">2</div>
-            <span style="font-weight: 500; color: var(--text-muted);">Map</span>
-          </div>
-          <div style="flex: 1; height: 2px; background: var(--border);"></div>
-          <div id="step-3" class="step" style="display: flex; align-items: center; gap: var(--space-2);">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--border); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.75rem;">3</div>
-            <span style="font-weight: 500; color: var(--text-muted);">Review</span>
-          </div>
-          <div style="flex: 1; height: 2px; background: var(--border);"></div>
-          <div id="step-4" class="step" style="display: flex; align-items: center; gap: var(--space-2);">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--border); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.75rem;">4</div>
-            <span style="font-weight: 500; color: var(--text-muted);">Export</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  page.appendChild(steps);
+  // ── Header ──
+  const header = document.createElement('section');
+  header.setAttribute('aria-label', 'Migration header');
+  header.style.cssText = 'padding: var(--space-12) 0 var(--space-6);';
+  const h1 = document.createElement('h1');
+  h1.textContent = 'Migration';
+  h1.style.cssText = 'font-size: 2.25rem; font-weight: 600; letter-spacing: -0.03em; color: var(--text-primary);';
+  const sub = document.createElement('p');
+  sub.textContent = 'Move your strategy into the Valora validation pipeline in four steps.';
+  sub.style.cssText = 'margin-top: var(--space-2); font-size: 0.9375rem; color: var(--text-secondary);';
+  header.appendChild(h1);
+  header.appendChild(sub);
 
-  // Step content container
-  const stepContent = document.createElement('section');
-  stepContent.style.cssText = `padding: 0 var(--space-6) var(--space-20);`;
-  stepContent.innerHTML = `
-    <div class="container" style="max-width: 800px; margin: 0 auto;">
-      <div id="step-panel-1" class="step-panel">
-        <h2 style="font-size: 1.5rem; font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-4);">Upload your strategy</h2>
-        <p style="color: var(--text-secondary); margin-bottom: var(--space-6);">Supported formats: Pine Script (.pine), Python (.py), YAML (.yaml), JSON (.json)</p>
-        <div id="drop-zone" style="
-          border: 2px dashed var(--border);
-          border-radius: var(--radius-lg);
-          padding: var(--space-16);
-          text-align: center;
-          background: var(--bg);
-          transition: all 0.15s ease;
-          cursor: pointer;
-        ">
-          ${createIcon('upload', 48).outerHTML}
-          <p style="margin-top: var(--space-4); color: var(--text-secondary); font-size: 1.125rem;">Drag & drop a file here, or click to browse</p>
-          <p style="margin-top: var(--space-2); color: var(--text-muted); font-size: 0.875rem;">Max file size: 10 MB</p>
-          <input type="file" id="file-input" accept=".pine,.py,.yaml,.yml,.json" style="display: none;">
-        </div>
-        <div id="file-info" style="display: none; margin-top: var(--space-6); padding: var(--space-4); background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-md);"></div>
-        <div style="margin-top: var(--space-6); display: flex; justify-content: flex-end;">
-          <div id="step1-next"></div>
-        </div>
-      </div>
+  // ── Step rail ──
+  const steps: { label: string; desc: string }[] = [
+    { label: 'Engine', desc: 'Pick your strategy engine' },
+    { label: 'Code', desc: 'Upload or link strategy code' },
+    { label: 'Costs', desc: 'Data, slippage, commission' },
+    { label: 'Run', desc: 'Execute and export the report' },
+  ];
+  let step = 0;
 
-      <div id="step-panel-2" class="step-panel" style="display: none;">
-        <h2 style="font-size: 1.5rem; font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-4);">Map to target engine</h2>
-        <p style="color: var(--text-secondary); margin-bottom: var(--space-6);">Select which Valora engine should run your migrated strategy.</p>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
-          <div id="engine-vbt" class="engine-option" style="
-            padding: var(--space-6);
-            border: 2px solid var(--border);
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            transition: all 0.15s ease;
-          ">
-            <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3);">
-              <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: var(--accent-bg); display: flex; align-items: center; justify-content: center; color: var(--accent);">
-                ${createIcon('chart', 24).outerHTML}
-              </div>
-              <div>
-                <div style="font-weight: 600; color: var(--text-primary);">VectorBT PRO</div>
-                <div style="font-size: 0.875rem; color: var(--text-muted);">Vectorized backtesting</div>
-              </div>
-            </div>
-            <ul style="list-style: none; display: flex; flex-direction: column; gap: var(--space-2); font-size: 0.875rem; color: var(--text-secondary);">
-              <li>${createIcon('check', 16).outerHTML} 10M+ bars/second</li>
-              <li>${createIcon('check', 16).outerHTML} Parameter sweeps</li>
-              <li>${createIcon('check', 16).outerHTML} Walk-forward analysis</li>
-              <li>${createIcon('check', 16).outerHTML} Regime detection</li>
-            </ul>
-          </div>
-          <div id="engine-nautilus" class="engine-option" style="
-            padding: var(--space-6);
-            border: 2px solid var(--border);
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            transition: all 0.15s ease;
-          ">
-            <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3);">
-              <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: var(--success-bg); display: flex; align-items: center; justify-content: center; color: var(--success);">
-                ${createIcon('shield', 24).outerHTML}
-              </div>
-              <div>
-                <div style="font-weight: 600; color: var(--text-primary);">NautilusTrader</div>
-                <div style="font-size: 0.875rem; color: var(--text-muted);">Event-driven execution</div>
-              </div>
-            </div>
-            <ul style="list-style: none; display: flex; flex-direction: column; gap: var(--space-2); font-size: 0.875rem; color: var(--text-secondary);">
-              <li>${createIcon('check', 16).outerHTML} Production fidelity</li>
-              <li>${createIcon('check', 16).outerHTML} Live trading ready</li>
-              <li>${createIcon('check', 16).outerHTML} Multi-venue support</li>
-              <li>${createIcon('check', 16).outerHTML} Risk management</li>
-            </ul>
-          </div>
-        </div>
-        <div style="margin-top: var(--space-6); display: flex; justify-content: space-between;">
-          <div id="step2-back"></div>
-          <div id="step2-next"></div>
-        </div>
-      </div>
+  const rail = document.createElement('div');
+  rail.style.cssText = 'display: flex; gap: 0; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-elevated); margin-bottom: var(--space-8); overflow: hidden;';
+  const stepEls: HTMLButtonElement[] = [];
 
-      <div id="step-panel-3" class="step-panel" style="display: none;">
-        <h2 style="font-size: 1.5rem; font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-4);">Review generated code</h2>
-        <p style="color: var(--text-secondary); margin-bottom: var(--space-6);">The migration generated runnable Python code. Review and edit if needed.</p>
-        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden;">
-          <div style="padding: var(--space-3) var(--space-4); background: var(--bg-elevated); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-family: var(--font-mono); font-size: 0.875rem; color: var(--text-secondary);">migrated_strategy.py</span>
-            <button id="copy-code" class="btn btn-ghost btn-sm" style="padding: var(--space-1) var(--space-3); font-size: 0.8125rem;">Copy</button>
-          </div>
-          <pre id="generated-code" style="padding: var(--space-4); margin: 0; overflow-x: auto; font-family: var(--font-mono); font-size: 0.8125rem; line-height: 1.6; color: var(--text-primary); max-height: 500px;">
-# Generated strategy code will appear here
-          </pre>
-        </div>
-        <div style="margin-top: var(--space-6); display: flex; justify-content: space-between;">
-          <div id="step3-back"></div>
-          <div id="step3-next"></div>
-        </div>
-      </div>
-
-      <div id="step-panel-4" class="step-panel" style="display: none;">
-        <h2 style="font-size: 1.5rem; font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-4);">Export & deploy</h2>
-        <p style="color: var(--text-secondary); margin-bottom: var(--space-6);">Your strategy is ready. Choose how to proceed.</p>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4);">
-          <div class="export-option" style="padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius-lg); text-align: center;">
-            ${createIcon('download', 32).outerHTML}
-            <h3 style="margin-top: var(--space-3); font-size: 1rem; font-weight: 600; color: var(--text-primary);">Download Python</h3>
-            <p style="margin-top: var(--space-2); color: var(--text-muted); font-size: 0.875rem;">Get the .py file to run locally</p>
-            <button id="export-py" class="btn btn-secondary" style="margin-top: var(--space-4); width: 100%;">Download .py</button>
-          </div>
-          <div class="export-option" style="padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius-lg); text-align: center;">
-            ${createIcon('upload', 32).outerHTML}
-            <h3 style="margin-top: var(--space-3); font-size: 1rem; font-weight: 600; color: var(--text-primary);">Push to Valora</h3>
-            <p style="margin-top: var(--space-2); color: var(--text-muted); font-size: 0.875rem;">Import directly into your workspace</p>
-            <button id="export-valora" class="btn btn-primary" style="margin-top: var(--space-4); width: 100%;">Import now</button>
-          </div>
-          <div class="export-option" style="padding: var(--space-6); border: 1px solid var(--border); border-radius: var(--radius-lg); text-align: center;">
-            ${createIcon('chart', 32).outerHTML}
-            <h3 style="margin-top: var(--space-3); font-size: 1rem; font-weight: 600; color: var(--text-primary);">Run validation</h3>
-            <p style="margin-top: var(--space-2); color: var(--text-muted); font-size: 0.875rem;">Go straight to backtest dashboard</p>
-            <button id="export-backtest" class="btn btn-secondary" style="margin-top: var(--space-4); width: 100%;">Open backtest</button>
-          </div>
-        </div>
-        <div style="margin-top: var(--space-6); display: flex; justify-content: flex-start;">
-          <div id="step4-back"></div>
-        </div>
-      </div>
-    </div>
-  `;
-  page.appendChild(stepContent);
-
-  // Initialize buttons
-  const step1Next = createButton('primary', 'md');
-  step1Next.textContent = 'Continue';
-  stepContent.querySelector('#step1-next')!.appendChild(step1Next);
-
-  const step2Back = createButton('ghost', 'md');
-  step2Back.textContent = 'Back';
-  stepContent.querySelector('#step2-back')!.appendChild(step2Back);
-
-  const step2Next = createButton('primary', 'md');
-  step2Next.textContent = 'Continue';
-  stepContent.querySelector('#step2-next')!.appendChild(step2Next);
-
-  const step3Back = createButton('ghost', 'md');
-  step3Back.textContent = 'Back';
-  stepContent.querySelector('#step3-back')!.appendChild(step3Back);
-
-  const step3Next = createButton('primary', 'md');
-  step3Next.textContent = 'Continue';
-  stepContent.querySelector('#step3-next')!.appendChild(step3Next);
-
-  const step4Back = createButton('ghost', 'md');
-  step4Back.textContent = 'Back';
-  stepContent.querySelector('#step4-back')!.appendChild(step4Back);
-
-  // Step navigation logic
-  const totalSteps = 4;
-  let selectedEngine = 'vbt';
-  let uploadedFile: File | null = null;
-
-  function showStep(step: number) {
-    for (let i = 1; i <= totalSteps; i++) {
-      const panel = stepContent.querySelector(`#step-panel-${i}`) as HTMLElement;
-      const stepEl = stepContent.querySelector(`#step-${i}`) as HTMLElement;
-      const numEl = stepEl?.querySelector('div') as HTMLElement;
-      if (panel) panel.style.display = i === step ? 'block' : 'none';
-      if (numEl) {
-        numEl.style.background = i <= step ? 'var(--accent)' : 'var(--border)';
-        numEl.style.color = i <= step ? 'white' : 'var(--text-muted)';
-      }
-      if (stepEl) {
-        const label = stepEl.querySelector('span') as HTMLElement;
-        if (label) label.style.color = i <= step ? 'var(--text-primary)' : 'var(--text-muted)';
-      }
-    }
-  }
-
-  // Drop zone handling
-  const dropZone = stepContent.querySelector('#drop-zone') as HTMLElement;
-  const fileInput = stepContent.querySelector('#file-input') as HTMLInputElement;
-  const fileInfo = stepContent.querySelector('#file-info') as HTMLElement;
-
-  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    });
+  steps.forEach((s, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.dataset.stepIndex = String(i);
+    btn.style.cssText = `
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px var(--space-5);
+      text-align: left;
+      border-right: ${i < steps.length - 1 ? '1px solid var(--border)' : 'none'};
+      transition: background 0.15s ease;
+    `;
+    const num = document.createElement('span');
+    num.textContent = `0${i + 1}`;
+    num.style.cssText = `font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em;`;
+    const label = document.createElement('span');
+    label.textContent = s.label;
+    label.style.cssText = 'font-size: 0.8125rem; font-weight: 500;';
+    btn.appendChild(num);
+    btn.appendChild(label);
+    btn.addEventListener('click', () => goTo(i));
+    rail.appendChild(btn);
+    stepEls.push(btn);
   });
 
-  ['dragenter', 'dragover'].forEach(eventName => {
-    dropZone.addEventListener(eventName, () => {
-      dropZone.style.borderColor = 'var(--accent)';
-      dropZone.style.background = 'var(--accent-bg)';
-    });
-  });
+  // ── Body: all step panels, one visible ──
+  const body = document.createElement('div');
+  body.style.cssText = 'flex: 1;';
 
-  ['dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, () => {
-      dropZone.style.borderColor = 'var(--border)';
-      dropZone.style.background = 'var(--bg)';
-    });
-  });
+  // Step 1 — Engine
+  const engineStep = document.createElement('div');
+  engineStep.style.cssText = 'max-width: 640px;';
+  const eTitle = document.createElement('h2');
+  eTitle.textContent = 'Which engine does your strategy run on?';
+  eTitle.style.cssText = 'font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em; color: var(--text-primary); margin-bottom: var(--space-5);';
+  engineStep.appendChild(eTitle);
 
-  dropZone.addEventListener('drop', (e) => {
-    const files = (e as DragEvent).dataTransfer?.files;
-    if (files && files.length > 0) {
-      handleFile(files[0]);
-    }
-  });
-
-  dropZone.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', () => {
-    if (fileInput.files && fileInput.files.length > 0) {
-      handleFile(fileInput.files[0]);
-    }
-  });
-
-  function handleFile(file: File) {
-    uploadedFile = file;
-    fileInfo.style.display = 'block';
-    fileInfo.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: var(--space-3);">
-          ${createIcon('check', 20).outerHTML}
-          <div>
-            <div style="font-weight: 500; color: var(--text-primary);">${file.name}</div>
-            <div style="font-size: 0.8125rem; color: var(--text-muted);">${(file.size / 1024).toFixed(1)} KB</div>
-          </div>
-        </div>
-        <button id="remove-file" style="color: var(--text-muted); background: none; border: none; cursor: pointer;">Remove</button>
+  const engines = [
+    { id: 'vbt', name: 'VectorBT PRO', desc: 'Numba-accelerated backtesting. Best for dense parameter sweeps and fast CPCV resampling.' },
+    { id: 'nautilus', name: 'NautilusTrader', desc: 'Event-driven, exchange-grade simulation. Best for realistic fills and multi-asset strategies.' },
+  ];
+  const engineEls: Map<string, HTMLDivElement> = new Map();
+  engines.forEach((eng, i) => {
+    void i;
+    const card = document.createElement('div');
+    card.dataset.engineId = eng.id;
+    card.style.cssText = `
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-4);
+      padding: var(--space-5);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      margin-bottom: var(--space-4);
+      transition: border-color 0.15s ease, background 0.15s ease;
+    `;
+    card.innerHTML = `
+      <span style="width: 4px; height: 4px; border-radius: 1px; background: var(--border-strong); margin-top: 9px; flex-shrink: 0;" class="eng-dot"></span>
+      <div>
+        <div style="font-size: 0.9375rem; font-weight: 600; color: var(--text-primary);">${eng.name}</div>
+        <div style="font-size: 0.8125rem; color: var(--text-muted); line-height: 1.55; margin-top: 4px;">${eng.desc}</div>
       </div>
     `;
-    fileInfo.querySelector('#remove-file')!.addEventListener('click', (e) => {
-      e.stopPropagation();
-      uploadedFile = null;
-      fileInfo.style.display = 'none';
-      fileInput.value = '';
-    });
-  }
-
-  // Engine selection
-  const vbtOption = stepContent.querySelector('#engine-vbt') as HTMLElement;
-  const nautilusOption = stepContent.querySelector('#engine-nautilus') as HTMLElement;
-
-  function selectEngine(engine: 'vbt' | 'nautilus') {
-    selectedEngine = engine;
-    vbtOption.style.borderColor = engine === 'vbt' ? 'var(--accent)' : 'var(--border)';
-    vbtOption.style.background = engine === 'vbt' ? 'var(--accent-bg)' : 'transparent';
-    nautilusOption.style.borderColor = engine === 'nautilus' ? 'var(--success)' : 'var(--border)';
-    nautilusOption.style.background = engine === 'nautilus' ? 'var(--success-bg)' : 'transparent';
-  }
-
-  vbtOption.addEventListener('click', () => selectEngine('vbt'));
-  nautilusOption.addEventListener('click', () => selectEngine('nautilus'));
-
-  // Generated code mock
-  const generatedCode = stepContent.querySelector('#generated-code') as HTMLElement;
-
-  function updateGeneratedCode() {
-    if (selectedEngine === 'vbt') {
-      generatedCode.textContent = `import vectorbtpro as vbt
-import pandas as pd
-import numpy as np
-
-# Migrated from Pine Script: EMA Crossover
-# Source: uploaded_strategy.pine
-
-class EMACrossover(vbt.Portfolio):
-    """
-    EMA Crossover Strategy
-    Fast EMA: 9 periods
-    Slow EMA: 21 periods
-    """
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-    
-    def run(self, close: pd.Series, **kwargs):
-        fast_ema = vbt.MA.run(close, window=9, ewm=True).ma
-        slow_ema = vbt.MA.run(close, window=21, ewm=True).ma
-        
-        entries = fast_ema.vbt.crossed_above(slow_ema)
-        exits = fast_ema.vbt.crossed_below(slow_ema)
-        
-        return self.from_signals(close, entries, exits, **kwargs)
-
-# Usage
-if __name__ == '__main__':
-    data = vbt.YFData.download('BTC-USD', start='2023-01-01').get('Close')
-    pf = EMACrossover().run(data, fees=0.001, slippage=0.0005)
-    print(pf.stats())
-    pf.plot().show()`;
-    } else {
-      generatedCode.textContent = `from nautilus_trader.trading.strategy import Strategy
-from nautilus_trader.model.data import Bar
-from nautilus_trader.indicators.ema import ExponentialMovingAverage
-
-# Migrated from Pine Script: EMA Crossover
-# Source: uploaded_strategy.pine
-
-class EMACrossover(Strategy):
-    """
-    EMA Crossover Strategy for NautilusTrader
-    Fast EMA: 9 periods
-    Slow EMA: 21 periods
-    """
-    
-    def __init__(self, config):
-        super().__init__(config)
-        self.fast_ema = ExponentialMovingAverage(9)
-        self.slow_ema = ExponentialMovingAverage(21)
-        self.position = None
-    
-    def on_start(self):
-        self.subscribe_bars(self.config.instrument_id, self.config.bar_type)
-    
-    def on_bar(self, bar: Bar):
-        self.fast_ema.update(bar.close)
-        self.slow_ema.update(bar.close)
-        
-        if self.fast_ema.initialized and self.slow_ema.initialized:
-            fast_val = self.fast_ema.value
-            slow_val = self.slow_ema.value
-            
-            if fast_val > slow_val and self.position is None:
-                self.buy(self.config.instrument_id, self.config.trade_size)
-            elif fast_val < slow_val and self.position is not None:
-                self.sell(self.config.instrument_id, self.position.size)
-
-# Configuration
-config = EMACrossoverConfig(
-    instrument_id="BTCUSDT.BINANCE",
-    bar_type="BTCUSDT.BINANCE-1-HOUR-LAST-EXTERNAL",
-    trade_size=1.0
-)`;
-    }
-  }
-
-  // Step navigation handlers
-  step1Next.addEventListener('click', () => {
-    if (!uploadedFile) {
-      const toast = createToast('Please upload a strategy file first', 'warning');
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-      return;
-    }
-    showStep(2);
+    const select = () => {
+      engineEls.forEach(el => {
+        el.style.borderColor = 'var(--border)';
+        const d = el.querySelector('.eng-dot')!;
+        (d as HTMLElement).style.background = 'var(--border-strong)';
+      });
+      card.style.borderColor = 'var(--text-primary)';
+      const dot = card.querySelector('.eng-dot')!;
+      (dot as HTMLElement).style.background = 'var(--text-primary)';
+    };
+    card.addEventListener('click', select);
+    card.addEventListener('mouseenter', () => { if (card.style.borderColor !== 'var(--text-primary)') card.style.borderColor = 'var(--border-strong)'; });
+    card.addEventListener('mouseleave', () => { if (card.style.borderColor !== 'var(--text-primary)') card.style.borderColor = 'var(--border)'; });
+    engineStep.appendChild(card);
+    engineEls.set(eng.id, card);
+    if (eng.id === 'vbt') select();
   });
 
-  step2Back.addEventListener('click', () => showStep(1));
-  step2Next.addEventListener('click', () => {
-    updateGeneratedCode();
-    showStep(3);
-  });
+  // Step 2 — Code upload
+  const codeStep = document.createElement('div');
+  codeStep.style.cssText = 'max-width: 640px;';
+  const cTitle = document.createElement('h2');
+  cTitle.textContent = 'Upload your strategy code';
+  cTitle.style.cssText = 'font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em; color: var(--text-primary); margin-bottom: var(--space-3);';
+  const cSub = document.createElement('p');
+  cSub.textContent = 'A single file or zip. Valora pins the exact revision and records its hash — the report is reproducible down to the byte.';
+  cSub.style.cssText = 'font-size: 0.875rem; color: var(--text-muted); margin-bottom: var(--space-6); line-height: 1.6;';
 
-  step3Back.addEventListener('click', () => showStep(2));
-  step3Next.addEventListener('click', () => showStep(4));
-
-  step4Back.addEventListener('click', () => showStep(3));
-
-  // Copy code
-  stepContent.querySelector('#copy-code')!.addEventListener('click', () => {
-    navigator.clipboard.writeText(generatedCode.textContent || '');
-    const toast = createToast('Code copied to clipboard', 'success');
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-  });
-
-  // Export handlers
-  stepContent.querySelector('#export-py')!.addEventListener('click', () => {
-    const blob = new Blob([generatedCode.textContent || ''], { type: 'text/x-python' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'migrated_strategy.py';
-    a.click();
-    URL.revokeObjectURL(url);
-    const toast = createToast('Python file downloaded', 'success');
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-  });
-
-  stepContent.querySelector('#export-valora')!.addEventListener('click', () => {
-    const toast = createToast('Strategy imported to workspace', 'success');
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-  });
-
-  stepContent.querySelector('#export-backtest')!.addEventListener('click', () => {
-    window.router.navigate('/backtest');
-  });
-
-  // Responsive
-  const style = document.createElement('style');
-  style.textContent = `
-    @media (max-width: 768px) {
-      .step span { display: none; }
-      #step-content > div > div:first-child { flex-direction: column; gap: var(--space-4); }
-      .export-options { grid-template-columns: 1fr !important; }
-    }
+  const dropzone = document.createElement('div');
+  dropzone.style.cssText = `
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: var(--space-12) var(--space-6);
+    text-align: center;
+    background: var(--bg-inset);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
   `;
-  document.head.appendChild(style);
+  dropzone.innerHTML = `
+    <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); letter-spacing: 0.06em;">
+      Drag &amp; drop, or <span style="color: var(--text-primary); text-decoration: underline;">browse</span>
+    </div>
+    <div style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--text-subtle); margin-top: var(--space-3); letter-spacing: 0.04em;">.py .ipynb .zip · max 25 MB</div>
+  `;
+  dropzone.addEventListener('click', () => {
+    const file = document.createElement('div');
+    file.style.cssText = 'margin-top: var(--space-5); display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-md);';
+    file.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg><span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-primary);">macd_trend.py · 14.2 KB</span>`;
+    dropzone.appendChild(file);
+    createToast('Strategy file hashed and pinned', 'success');
+  });
+  dropzone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'var(--accent)';
+    dropzone.style.background = 'var(--accent-bg)';
+  });
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.style.borderColor = 'var(--border-strong)';
+    dropzone.style.background = 'var(--bg-inset)';
+  });
+  codeStep.appendChild(cTitle);
+  codeStep.appendChild(cSub);
+  codeStep.appendChild(dropzone);
+
+  // Step 3 — Costs
+  const costsStep = document.createElement('div');
+  costsStep.style.cssText = 'max-width: 640px;';
+  const cstTitle = document.createElement('h2');
+  cstTitle.textContent = 'Cost & data settings';
+  cstTitle.style.cssText = 'font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em; color: var(--text-primary); margin-bottom: var(--space-5);';
+
+  const fields: [string, string, string][] = [
+    ['Initial capital', '$', '100000'],
+    ['Slippage', 'bps', '2.0'],
+    ['Commission', 'bps', '4.5'],
+    ['Data window', '', '2019-01-01 → 2024-12-31'],
+    ['Venue', '', 'Binance'],
+    ['Bars', '', '1h'],
+  ];
+  const fieldGrid = document.createElement('div');
+  fieldGrid.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);';
+  fields.forEach(([lbl, unit, val]) => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display: flex; flex-direction: column; gap: 6px;';
+    const l = document.createElement('label');
+    l.textContent = lbl;
+    l.style.cssText = 'font-family: var(--font-mono); font-size: 0.625rem; color: var(--text-subtle); letter-spacing: 0.1em; text-transform: uppercase;';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = val;
+    if (unit) {
+      const unitWrap = document.createElement('div');
+      unitWrap.style.cssText = 'position: relative;';
+      input.style.cssText = `
+        width: 100%;
+        height: 34px;
+        padding: 0 32px 0 var(--space-3);
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
+        color: var(--text-primary);
+        background: var(--bg-inset);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      `;
+      input.addEventListener('focus', () => { input.style.borderColor = 'var(--accent)'; input.style.boxShadow = '0 0 0 2px var(--focus)'; });
+      input.addEventListener('blur', () => { input.style.borderColor = 'var(--border)'; input.style.boxShadow = 'none'; });
+      const u = document.createElement('span');
+      u.textContent = unit;
+      u.style.cssText = 'position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-family: var(--font-mono); font-size: 0.6875rem; color: var(--text-subtle); pointer-events: none;';
+      unitWrap.appendChild(input);
+      unitWrap.appendChild(u);
+      wrap.appendChild(l);
+      wrap.appendChild(unitWrap);
+    } else {
+      input.style.cssText = `
+        width: 100%;
+        height: 34px;
+        padding: 0 var(--space-3);
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
+        color: var(--text-primary);
+        background: var(--bg-inset);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      `;
+      input.addEventListener('focus', () => { input.style.borderColor = 'var(--accent)'; input.style.boxShadow = '0 0 0 2px var(--focus)'; });
+      input.addEventListener('blur', () => { input.style.borderColor = 'var(--border)'; input.style.boxShadow = 'none'; });
+      wrap.appendChild(l);
+      wrap.appendChild(input);
+    }
+    fieldGrid.appendChild(wrap);
+  });
+  costsStep.appendChild(cstTitle);
+  costsStep.appendChild(fieldGrid);
+
+  // Step 4 — Run
+  const runStep = document.createElement('div');
+  runStep.style.cssText = 'max-width: 640px;';
+  const rTitle = document.createElement('h2');
+  rTitle.textContent = 'Run the suite';
+  rTitle.style.cssText = 'font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em; color: var(--text-primary); margin-bottom: var(--space-3);';
+  const rSub = document.createElement('p');
+  rSub.textContent = 'The full validation suite — CPCV, DSR, PBO, regime attribution, and cost models — runs in parallel. Most strategies finish in under 20 minutes.';
+  rSub.style.cssText = 'font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; margin-bottom: var(--space-6);';
+  const runNow = createButton('primary', 'md');
+  runNow.textContent = 'Run full suite';
+  runNow.appendChild(createIcon('chart', 14));
+  runNow.addEventListener('click', () => createToast('Suite submitted — 384 resamples in flight', 'info'));
+  const exportBtn = createButton('secondary', 'md');
+  exportBtn.textContent = 'Export template report';
+  exportBtn.appendChild(createIcon('download', 14));
+  exportBtn.addEventListener('click', () => createToast('Sample trust report downloaded', 'success'));
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display: flex; gap: var(--space-3);';
+  btnRow.appendChild(runNow);
+  btnRow.appendChild(exportBtn);
+  runStep.appendChild(rTitle);
+  runStep.appendChild(rSub);
+  runStep.appendChild(btnRow);
+
+  const panels = [engineStep, codeStep, costsStep, runStep];
+  panels.forEach((panel, i) => {
+    panel.style.display = i === 0 ? 'block' : 'none';
+    body.appendChild(panel);
+  });
+
+  // ── Footer nav ──
+  const footerNav = document.createElement('div');
+  footerNav.style.cssText = 'display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-8); padding-top: var(--space-5); border-top: 1px solid var(--border);';
+  const stepCounter = document.createElement('span');
+  stepCounter.style.cssText = 'font-family: var(--font-mono); font-size: 0.6875rem; color: var(--text-subtle); letter-spacing: 0.1em;';
+
+  const backBtn = createButton('ghost', 'md');
+  backBtn.textContent = 'Back';
+  const nextBtn = createButton('secondary', 'md');
+  const nextIcon = createIcon('arrowRight', 14);
+  nextBtn.textContent = 'Continue';
+  nextBtn.appendChild(nextIcon);
+
+  const navRow = document.createElement('div');
+  navRow.style.cssText = 'display: flex; gap: var(--space-3);';
+  navRow.appendChild(backBtn);
+  navRow.appendChild(nextBtn);
+  footerNav.appendChild(stepCounter);
+  footerNav.appendChild(navRow);
+
+  function goTo(i: number) {
+    step = Math.max(0, Math.min(steps.length - 1, i));
+    panels.forEach((panel, idx) => {
+      panel.style.display = idx === step ? 'block' : 'none';
+    });
+    stepEls.forEach((el, idx) => {
+      const num = el.querySelector('span')!;
+      if (idx === step) {
+        num.style.color = 'var(--text-primary)';
+        num.style.fontWeight = '600';
+        el.style.background = 'var(--bg-hover)';
+        const lb = el.querySelectorAll('span')[1];
+        lb.style.color = 'var(--text-primary)';
+      } else if (idx < step) {
+        num.style.color = 'var(--text-subtle)';
+        num.style.fontWeight = '400';
+        el.style.background = 'transparent';
+        const lb = el.querySelectorAll('span')[1];
+        lb.style.color = 'var(--text-muted)';
+      } else {
+        num.style.color = 'var(--text-subtle)';
+        num.style.fontWeight = '400';
+        el.style.background = 'transparent';
+        const lb = el.querySelectorAll('span')[1];
+        lb.style.color = 'var(--text-secondary)';
+      }
+    });
+    stepCounter.textContent = `STEP ${step + 1} OF ${steps.length}`;
+    backBtn.style.visibility = step === 0 ? 'hidden' : 'visible';
+    nextBtn.textContent = step === steps.length - 1 ? 'Finish' : 'Continue';
+    nextBtn.appendChild(nextIcon);
+  }
+
+  backBtn.addEventListener('click', () => goTo(step - 1));
+  nextBtn.addEventListener('click', () => {
+    if (step === steps.length - 1) {
+      createToast('Migration complete — TR report queued', 'success');
+    } else {
+      goTo(step + 1);
+    }
+  });
+  goTo(0);
+
+  page.appendChild(header);
+  page.appendChild(rail);
+  page.appendChild(body);
+  page.appendChild(footerNav);
 
   return page;
 }

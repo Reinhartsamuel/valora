@@ -1,6 +1,6 @@
 export class Router {
   element: HTMLElement;
-  private routes: Map<string, () => Promise<HTMLElement>> = new Map();
+  private routes: Map<string, () => HTMLElement | Promise<HTMLElement>> = new Map();
   private currentRoute: string = '/';
   private currentView: HTMLElement | null = null;
 
@@ -8,10 +8,10 @@ export class Router {
     this.element = document.createElement('main');
     this.element.id = 'router-outlet';
     this.element.style.flex = '1';
-    this.element.style.minHeight = 'calc(100vh - 64px - 280px)';
+    this.element.style.minHeight = 'calc(100vh - 56px - 280px)';
   }
 
-  register(path: string, loader: () => Promise<HTMLElement>) {
+  register(path: string, loader: () => HTMLElement | Promise<HTMLElement>) {
     this.routes.set(path, loader);
   }
 
