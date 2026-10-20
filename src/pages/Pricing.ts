@@ -1,4 +1,4 @@
-import { createButton, createCard, createBadge } from '../components/UI.ts';
+import { createButton, createCard } from '../components/UI.ts';
 
 export async function createPricingPage(): Promise<HTMLElement> {
   const page = document.createElement('div');
@@ -32,9 +32,9 @@ export async function createPricingPage(): Promise<HTMLElement> {
   billingToggle.style.cssText = `padding: 0 var(--space-6) var(--space-12); text-align: center;`;
   billingToggle.innerHTML = `
     <div class="container" style="max-width: 400px; margin: 0 auto;">
-      <div style="display: inline-flex; align-items: center; gap: var(--space-4); background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: var(--space-1);">
-        <span id="monthly-label" style="font-weight: 500; color: var(--text-primary); cursor: pointer; padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill);">Monthly</span>
-        <span id="yearly-label" style="font-weight: 400; color: var(--text-muted); cursor: pointer; padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill);">Yearly <span style="color: var(--success); font-size: 0.75rem; font-weight: 600;">Save 20%</span></span>
+      <div style="display: inline-flex; align-items: center; gap: 2px; background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 3px;">
+        <span id="monthly-label" style="font-weight: 600; color: var(--text-primary); cursor: pointer; padding: 5px var(--space-4); border: 1px solid var(--border); background: var(--bg-elevated); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);">Monthly</span>
+        <span id="yearly-label" style="font-weight: 500; color: var(--text-muted); cursor: pointer; padding: 5px var(--space-4); border: 1px solid transparent; border-radius: var(--radius-sm);">Yearly <span style="color: var(--success); font-size: 0.6875rem; font-family: var(--font-mono);">−20%</span></span>
       </div>
     </div>
   `;
@@ -117,8 +117,9 @@ export async function createPricingPage(): Promise<HTMLElement> {
     plans.forEach(plan => {
       const card = createCard(plan.popular);
       if (plan.popular) {
-        card.style.borderColor = 'var(--accent-border)';
-        card.style.boxShadow = 'var(--shadow-lg), 0 0 0 1px var(--accent-border)';
+        card.style.borderColor = 'var(--border-strong)';
+        card.style.borderTop = '2px solid var(--accent)';
+        card.style.boxShadow = 'var(--shadow-lg)';
       }
       card.style.padding = 'var(--space-6)';
       card.style.display = 'flex';
@@ -139,14 +140,14 @@ export async function createPricingPage(): Promise<HTMLElement> {
       }
 
       card.innerHTML = `
-        ${plan.popular ? `<div style="text-align: center; margin-bottom: var(--space-4);">${createBadge('Most popular', 'accent').outerHTML}</div>` : ''}
-        <h3 style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-1);">${plan.name}</h3>
-        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: var(--space-4);">${plan.description}</p>
+        ${plan.popular ? `<div style="font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-text); margin-bottom: var(--space-4);">Recommended</div>` : ''}
+        <h3 style="font-size: 1.125rem; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); margin-bottom: var(--space-1);">${plan.name}</h3>
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: var(--space-5);">${plan.description}</p>
         ${priceHtml}
-        <ul style="list-style: none; display: flex; flex-direction: column; gap: var(--space-3); margin-bottom: var(--space-6); flex: 1;">
+        <ul style="list-style: none; display: flex; flex-direction: column; gap: var(--space-3); margin: var(--space-6) 0; flex: 1;">
           ${plan.features.map(f => `
             <li style="display: flex; align-items: flex-start; gap: var(--space-3); color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M20 6L9 17l-5-5"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px;"><path d="M20 6L9 17l-5-5"/></svg>
               ${f}
             </li>
           `).join('')}
@@ -163,23 +164,32 @@ export async function createPricingPage(): Promise<HTMLElement> {
     });
   }
 
+  function setToggleState(activeIsMonthly: boolean) {
+    const active = activeIsMonthly ? monthlyLabel : yearlyLabel;
+    const inactive = activeIsMonthly ? yearlyLabel : monthlyLabel;
+    active.style.fontWeight = '600';
+    active.style.color = 'var(--text-primary)';
+    active.style.background = 'var(--bg-elevated)';
+    active.style.borderColor = 'var(--border)';
+    active.style.boxShadow = 'var(--shadow-sm)';
+    inactive.style.fontWeight = '500';
+    inactive.style.color = 'var(--text-muted)';
+    inactive.style.background = 'transparent';
+    inactive.style.borderColor = 'transparent';
+    inactive.style.boxShadow = 'none';
+  }
+
   monthlyLabel.addEventListener('click', () => {
     if (!isYearly) return;
     isYearly = false;
-    monthlyLabel.style.fontWeight = '500';
-    monthlyLabel.style.color = 'var(--text-primary)';
-    yearlyLabel.style.fontWeight = '400';
-    yearlyLabel.style.color = 'var(--text-muted)';
+    setToggleState(true);
     renderCards();
   });
 
   yearlyLabel.addEventListener('click', () => {
     if (isYearly) return;
     isYearly = true;
-    monthlyLabel.style.fontWeight = '400';
-    monthlyLabel.style.color = 'var(--text-muted)';
-    yearlyLabel.style.fontWeight = '500';
-    yearlyLabel.style.color = 'var(--text-primary)';
+    setToggleState(false);
     renderCards();
   });
 
